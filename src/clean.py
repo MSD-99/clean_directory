@@ -1,5 +1,6 @@
 import shutil
 from pathlib import Path
+from typing import Union
 
 from loguru import logger
 
@@ -7,32 +8,31 @@ from src.data import DATA_DIR
 from src.utils.io import read_json
 
 
-
 class OrganizeFiles:
     """
     This class is used to organize file in a directory
     by moving files into directories based on extention.
     """
-    def __init__(self, directory):
-        self.directory = Path(directory)
-        if not self.directory.exists():
-            raise FileNotFoundError(f"{self.directory} does not exist")
-
-        logger.info(f"Organizing files in {directory}...")
+    def __init__(self):
         self.extensions_dest = {}
         ext_dir = read_json(DATA_DIR / "extensions.json")
         for dir_name, ext_list in ext_dir.items():
             for ext in ext_list:
                 self.extensions_dest[ext] = dir_name
-        print(self.extensions_dest)
+        # print(self.extensions_dest)
 
 
-    def __call__(self):
+    def __call__(self, directory: Union(str, Path)):
         """ Organize files in a directory by moving them
         to sub directories based on extension.
         """
+        directory = Path(directory)
+        if not directory.exists():
+            raise FileNotFoundError(f"{directory} does not exist")
+
+        logger.info(f"Organizing files in {directory}...")
         file_extensions = []
-        for file_path in self.directory.iterdir():
+        for file_path in directory.iterdir():
 
             #ignore directory
             if file_path.is_dir():
@@ -46,18 +46,17 @@ class OrganizeFiles:
             file_extensions.append(file_path.suffix)
             # move files
             if file_path.suffix not in self.extensions_dest:
-                DEST_DIR = self.directory / 'other'
+                DEST_DIR = directory / 'other'
             else:
-                DEST_DIR = self.directory / self.extensions_dest[file_path.suffix]
+                DEST_DIR = directory / self.extensions_dest[file_path.suffix]
 
             DEST_DIR.mkdir(exist_ok = True)
             logger.info(f"Moving {file_path} to {DEST_DIR}...")
             shutil.move(str(file_path), str(DEST_DIR))
 
 if __name__ == "__main__":
-    org_files = OrganizeFiles\
-        ('/mnt/d/Download')
-    org_files()
+    org_files = OrganizeFiles()
+    org_files('/mnt/d/Download')
     logger.info("Done!")
 
 
